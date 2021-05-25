@@ -1,0 +1,39 @@
+#!/usr/bin/Rscript
+library(flowCore)
+
+files = commandArgs(trailingOnly=TRUE)
+
+if (length(files)==0){
+	stop('You need to pass fcs files as arguments.')
+}
+
+n_skipped = 0
+n_read = 0
+
+for (filename in files){
+    # Read FCS file
+    raw <- read.FCS(filename = filename)
+    d <- as.data.frame(exprs(raw))
+    
+    if(nrow(d)==0){
+        n_skipped = n_skipped+1
+	message(paste('Skipping empty file:',basename(filename)))
+        next
+    }
+
+    
+    colnames(d) <- gsub(" ", "_", colnames(d))
+
+    # Add a column with the filename
+    d$name = basename(filename)
+
+    # Write a csv file per fcs file
+    n_read = n_read+1
+
+    print_col_names = (n_read == 1) # Only print header for the first file.
+
+    write.table(d, file = stdout(),
+                sep = "\t", quote = TRUE, row.names = FALSE, col.names = print_col_names)    
+    message(paste('Converted file:', basename(filename)))
+}
+
